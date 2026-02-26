@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Interativo de Planos de Saúde</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .tab-button.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+            border-color: #4f46e5; /* indigo-600 */
+        }
+        .tab-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .plan-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            animation: pulse-glow 2.5s infinite ease-in-out;
+        }
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            animation-play-state: paused;
+        }
+        .section-title {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700;
+            color: #1e293b; /* slate-800 */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        /* Animação chamativa para o botão de WhatsApp */
+        .btn-whatsapp-pulse {
+            animation: whatsapp-pulse 2s infinite;
+        }
+
+        @keyframes whatsapp-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1.03); box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            }
+            50% {
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), 0 0 0 5px rgb(99 102 241 / 0.3);
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-600">Guia do Plano de Saúde | Colaborador Desbrav</h1>
+            <p class="text-slate-500 mt-4 text-lg">Seu guia para entender, comparar e simular o plano de saúde oferecido pela Desbrav.</p>
+        </header>
+
+        <!-- Seção de Seleção de Planos -->
+        <section id="planos" class="mb-12">
+            <h2 class="section-title text-center">Nossos Planos</h2>
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Card Plano Ambulatorial -->
+                <div id="card-ambulatorial" class="plan-card bg-white p-8 rounded-xl shadow-md border-2 border-transparent cursor-pointer" onclick="selectPlan('ambulatorial')">
+                    <h3 class="text-2xl font-bold text-slate-800">Plano Max Ambulatorial</h3>
+                    <p class="text-slate-500 mt-2">Ideal para consultas, exames e procedimentos que não exigem internação.</p>
+                </div>
+                <!-- Card Plano Hospitalar -->
+                <div id="card-hospitalar" class="plan-card bg-white p-8 rounded-xl shadow-md border-2 border-transparent cursor-pointer" onclick="selectPlan('hospitalar')">
+                    <h3 class="text-2xl font-bold text-slate-800">Plano Max Hospitalar</h3>
+                    <p class="text-slate-500 mt-2">Cobertura completa, incluindo internações, cirurgias, além de consultas e exames.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção de Detalhes dos Planos (inicialmente oculta) -->
+        <section id="plan-details-section" class="hidden mb-12">
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-6xl mx-auto">
+                 <div class="flex flex-col sm:flex-row justify-center border-b border-slate-200 mb-6 space-y-2 sm:space-y-0 sm:space-x-2">
+                    <button id="tab-coberturas" class="tab-button w-full sm:w-auto text-lg font-semibold py-3 px-6 rounded-t-lg border-b-2" onclick="showTab('coberturas')">Coberturas</button>
+                    <button id="tab-carencias" class="tab-button w-full sm:w-auto text-lg font-semibold py-3 px-6 rounded-t-lg border-b-2" onclick="showTab('carencias')">Carências</button>
+                    <button id="tab-comparativo" class="tab-button w-full sm:w-auto text-lg font-semibold py-3 px-6 rounded-t-lg border-b-2" onclick="showTab('comparativo')">Comparativo</button>
+                </div>
+                
+                <div id="tab-content" class="fade-in">
+                    <!-- Conteúdo será injetado pelo JavaScript -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Seção da Calculadora / Simulador -->
+        <section id="simulador" class="mb-12">
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+                <h2 class="section-title text-center">Simulador de Desconto em Folha</h2>
+                <p class="text-center text-slate-500 mb-8 -mt-4">Calcule o valor mensal do seu plano. Lembre-se: a empresa subsidia 50% do valor do plano Ambulatorial para você!</p>
+
+                <div class="space-y-6">
+                    <!-- Faixa Etária do Funcionário -->
+                    <div>
+                        <label for="employee-age" class="block text-lg font-medium text-slate-800 mb-2">Sua faixa etária:</label>
+                        <select id="employee-age" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <!-- Opções de idade preenchidas pelo JS -->
+                        </select>
+                    </div>
+
+                    <!-- Escolha do Plano -->
+                    <div>
+                         <label class="block text-lg font-medium text-slate-800 mb-2">Sua escolha de plano:</label>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <label class="flex-1 p-4 border border-slate-300 rounded-lg cursor-pointer has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-500">
+                                <input type="radio" name="selected-plan" value="ambulatorial" class="mr-3">
+                                Plano Max Ambulatorial
+                            </label>
+                            <label class="flex-1 p-4 border border-slate-300 rounded-lg cursor-pointer has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-500">
+                                <input type="radio" name="selected-plan" value="hospitalar" class="mr-3">
+                                Plano Max Hospitalar
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Dependentes -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-lg font-medium text-slate-800">Seus dependentes (se houver):</label>
+                            <button onclick="addDependent()" class="bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors">+ Adicionar</button>
+                        </div>
+                        <div id="dependents-list" class="space-y-3">
+                            <!-- Campos de dependentes serão adicionados aqui -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Resultados da Simulação -->
+                <div id="simulation-results" class="mt-8 pt-6 border-t border-slate-200">
+                     <!-- O resultado da simulação aparecerá aqui com o botão de WhatsApp -->
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- BANCO DE DADOS DOS PLANOS ---
+
+        const ageRanges = ["0 - 18", "19 - 23", "24 - 28", "29 - 33", "34 - 38", "39 - 43", "44 - 48", "49 - 53", "54 - 58", "59 ou mais"];
+        
+        // Valores atualizados conforme tabelas enviadas (Ambulatorial atualizado pela última tabela)
+        const prices = {
+            ambulatorial: [120.88, 142.32, 151.54, 165.22, 182.39, 211.48, 271.55, 299.68, 446.32, 609.95],
+            hospitalar: [248.17, 299.10, 331.93, 368.49, 443.47, 511.04, 681.44, 770.09, 1321.11, 1488.94]
+        };
+
+        const planData = {
+            ambulatorial: {
+                name: 'Plano Max Ambulatorial',
+                coverage: [
+                    '<strong>Consultas Médicas:</strong> Todas as especialidades.',
+                    '<strong>Consultas/Sessões:</strong> Psicologia, nutrição, fonoaudiologia e terapia ocupacional.',
+                    '<strong>Pronto Atendimento:</strong> Urgência e Emergência.',
+                    '<strong>Psicoterapia:</strong> Consultas e tratamento psiquiátrico.',
+                    '<strong>Procedimentos Ambulatoriais:</strong> Enfermagem, imobilizações, suturas, drenagens, etc.',
+                    '<strong>Planejamento Familiar:</strong> Implante de DIU (com coparticipação).',
+                    '<strong>Exames:</strong> Raio-X, laboratoriais, ecografia, endoscopia, tomografia, ressonância, etc.',
+                    '<strong>Procedimentos Especiais:</strong> Cirurgias oftalmológicas, hemodiálise, quimioterapia, radioterapia.',
+                    '<strong>Fisioterapia:</strong> Reeducação e reabilitação física.',
+                    '<strong>Odontologia:</strong> Consultas e procedimentos básicos (não estéticos).'
+                ],
+                waitingPeriods: [
+                    '<strong>Sem carência:</strong> Consultas médicas, Pronto Atendimento, Exames de Baixa Complexidade, Enfermagem.',
+                    '<strong>30 dias:</strong> Consultas e procedimentos odontológicos básicos.',
+                    '<strong>90 dias:</strong> Fisioterapia, Exames de Média Complexidade, Suturas, drenagens, etc.',
+                    '<strong>180 dias:</strong> Psicologia, nutrição, fonoaudiologia, psicoterapia, Exames de Alta Complexidade, Procedimentos Especiais, Cirurgias e próteses odontológicas, Implante de DIU.',
+                    '<strong>CPT (Doença Pré-existente):</strong> 24 meses para procedimentos de alto custo.'
+                ]
+            },
+            hospitalar: {
+                name: 'Plano Max Hospitalar',
+                coverage: [
+                    '<strong>TODAS AS COBERTURAS DO PLANO AMBULATORIAL +</strong>',
+                    '<strong>Internações Hospitalares:</strong> Clínicas, cirúrgicas e psiquiátricas em leito semi-privativo.',
+                    '<strong>Internações Obstétricas:</strong> Acomodação em leito semi-privativo para parto.'
+                ],
+                waitingPeriods: [
+                    '<strong>Mesmas carências do Plano Ambulatorial para itens ambulatoriais.</strong>',
+                    '<strong>180 dias:</strong> Internações clínicas e cirúrgicas.',
+                    '<strong>300 dias:</strong> Internações para parto.',
+                    '<strong>CPT (Doença Pré-existente):</strong> 24 meses para procedimentos de alto custo.'
+                ]
+            }
+        };
+
+        // --- VARIÁVEIS DE ESTADO ---
+        let currentPlan = null;
+        let currentTab = 'coberturas';
+
+        // --- FUNÇÕES DE LÓGICA E RENDERIZAÇÃO ---
+
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+        
+        function selectPlan(planName) {
+            currentPlan = planName;
+            document.getElementById('card-ambulatorial').classList.remove('border-indigo-500', 'bg-indigo-50');
+            document.getElementById('card-hospitalar').classList.remove('border-indigo-500', 'bg-indigo-50');
+            document.getElementById(`card-${planName}`).classList.add('border-indigo-500', 'bg-indigo-50');
+            document.getElementById('plan-details-section').classList.remove('hidden');
+            const radio = document.querySelector(`input[name="selected-plan"][value="${planName}"]`);
+            if (radio) { radio.checked = true; }
+            showTab('coberturas'); // Aba Coberturas por padrão ao selecionar
+            calculateTotal();
+        }
+        
+        function showTab(tabName) {
+            currentTab = tabName;
+            const contentDiv = document.getElementById('tab-content');
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            let htmlContent = '';
+            if (tabName === 'comparativo') {
+                htmlContent = getComparisonHtml();
+            } else {
+                if (!currentPlan) {
+                     htmlContent = `<p class="text-center text-slate-500 p-4">Por favor, selecione um plano acima para ver os detalhes.</p>`;
+                } else {
+                    const dataKey = tabName === 'coberturas' ? 'coverage' : 'waitingPeriods';
+                     htmlContent = `
+                        <h3 class="text-2xl font-bold text-slate-800 mb-4">${planData[currentPlan].name}</h3>
+                        <ul class="space-y-3 list-disc list-inside text-slate-600">
+                           ${planData[currentPlan][dataKey].map(item => `<li>${item}</li>`).join('')}
+                        </ul>`;
+                }
+            }
+            contentDiv.innerHTML = htmlContent;
+        }
+
+        function getComparisonHtml() {
+            const comparisonData = [
+                { item: 'Consultas Médicas', ambulatorial: { covered: true, period: 'Sem carência' }, hospitalar: { covered: true, period: 'Sem carência' } },
+                { item: 'Consultas/Sessões (Psico, Nutri, etc)', ambulatorial: { covered: true, period: '180 dias' }, hospitalar: { covered: true, period: '180 dias' } },
+                { item: 'Pronto Atendimento (Urgência/Emergência)', ambulatorial: { covered: true, period: 'Sem carência' }, hospitalar: { covered: true, period: 'Sem carência' } },
+                { item: 'Psicoterapia', ambulatorial: { covered: true, period: '180 dias' }, hospitalar: { covered: true, period: '180 dias' } },
+                { item: 'Procedimentos Ambulatoriais (Suturas, etc)', ambulatorial: { covered: true, period: '90 dias' }, hospitalar: { covered: true, period: '90 dias' } },
+                { item: 'Planejamento Familiar (DIU)', ambulatorial: { covered: true, period: '180 dias' }, hospitalar: { covered: true, period: '180 dias' } },
+                { item: 'Exames de Baixa Complexidade', ambulatorial: { covered: true, period: 'Sem carência' }, hospitalar: { covered: true, period: 'Sem carência' } },
+                { item: 'Exames de Média Complexidade', ambulatorial: { covered: true, period: '90 dias' }, hospitalar: { covered: true, period: '90 dias' } },
+                { item: 'Exames de Alta Complexidade', ambulatorial: { covered: true, period: '180 dias' }, hospitalar: { covered: true, period: '180 dias' } },
+                { item: 'Procedimentos Especiais (Quimio/Radio)', ambulatorial: { covered: true, period: '180 dias' }, hospitalar: { covered: true, period: '180 dias' } },
+                { item: 'Fisioterapia', ambulatorial: { covered: true, period: '90 dias' }, hospitalar: { covered: true, period: '90 dias' } },
+                { item: 'Odontologia Básica', ambulatorial: { covered: true, period: '30 dias' }, hospitalar: { covered: true, period: '30 dias' } },
+                { item: 'Cirurgias e Próteses Odontológicas', ambulatorial: { covered: true, period: '180 dias' }, hospitalar: { covered: true, period: '180 dias' } },
+                { item: 'Internações Clínicas e Cirúrgicas', ambulatorial: { covered: false, period: 'Não Cobre' }, hospitalar: { covered: true, period: '180 dias' } },
+                { item: 'Internação para Parto', ambulatorial: { covered: false, period: 'Não Cobre' }, hospitalar: { covered: true, period: '300 dias' } },
+            ];
+            
+            let tableRows = '';
+            comparisonData.forEach(row => {
+                tableRows += `
+                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                        <td class="p-3 font-medium text-slate-700">${row.item}</td>
+                        <td class="p-3 text-center">
+                            <span class="font-bold ${row.ambulatorial.covered ? 'text-green-600' : 'text-red-600'}">${row.ambulatorial.covered ? 'SIM' : 'NÃO'}</span>
+                            <br><small class="text-slate-500">${row.ambulatorial.period}</small>
+                        </td>
+                        <td class="p-3 text-center">
+                            <span class="font-bold ${row.hospitalar.covered ? 'text-green-600' : 'text-red-600'}">${row.hospitalar.covered ? 'SIM' : 'NÃO'}</span>
+                            <br><small class="text-slate-500">${row.hospitalar.period}</small>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            return `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="p-3 text-lg font-semibold text-slate-800">Coberturas e Carências</th>
+                                <th class="p-3 text-lg font-semibold text-slate-800 text-center">${planData.ambulatorial.name}</th>
+                                <th class="p-3 text-lg font-semibold text-slate-800 text-center">${planData.hospitalar.name}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-center text-sm text-slate-500 mt-4"><strong>CPT (Doença Pré-existente):</strong> 24 meses de carência para procedimentos de alto custo em ambos os planos.</p>
+            `;
+        }
+
+        let dependentId = 0;
+
+        function addDependent() {
+            dependentId++;
+            const list = document.getElementById('dependents-list');
+            const div = document.createElement('div');
+            div.className = 'dependent-item flex items-center gap-4 p-3 bg-slate-50 rounded-lg';
+            div.id = `dependent-${dependentId}`;
+            
+            const select = document.createElement('select');
+            select.className = 'w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+            select.innerHTML = ageRanges.map((range, index) => `<option value="${index}">${range}</option>`).join('');
+            select.onchange = calculateTotal;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'text-red-500 font-bold text-2xl hover:text-red-700 px-2';
+            removeBtn.onclick = () => {
+                document.getElementById(`dependent-${dependentId}`).remove();
+                calculateTotal();
+            };
+            
+            div.appendChild(select);
+            div.appendChild(removeBtn);
+            list.appendChild(div);
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const employeeAgeIndex = parseInt(document.getElementById('employee-age').value);
+            const selectedPlan = document.querySelector('input[name="selected-plan"]:checked')?.value;
+            const resultsDiv = document.getElementById('simulation-results');
+
+            // Número de WhatsApp do RH
+            const numeroWhatsappRH = '5551920035169'; 
+            const whatsappMessage = "Olá! Quero solicitar meu plano de saúde como colaborador da Desbrav.";
+
+            if (isNaN(employeeAgeIndex) || !selectedPlan) {
+                 resultsDiv.innerHTML = `<p class="text-center text-slate-500">Preencha sua idade e escolha um plano para simular.</p>`;
+            } else {
+                const ambulatorialPrice = prices.ambulatorial[employeeAgeIndex];
+                const companySubsidy = ambulatorialPrice * 0.5;
+
+                let employeeCost = 0;
+                let employeePlanValue = 0;
+                if (selectedPlan === 'ambulatorial') {
+                    employeePlanValue = ambulatorialPrice;
+                    employeeCost = ambulatorialPrice - companySubsidy;
+                } else {
+                    const hospitalarPrice = prices.hospitalar[employeeAgeIndex];
+                    employeePlanValue = hospitalarPrice;
+                    employeeCost = hospitalarPrice - companySubsidy;
+                }
+                
+                let dependentsCost = 0;
+                const dependentElements = document.querySelectorAll('.dependent-item select');
+                dependentElements.forEach(select => {
+                    const dependentAgeIndex = parseInt(select.value);
+                    dependentsCost += prices[selectedPlan][dependentAgeIndex];
+                });
+
+                const totalDiscount = employeeCost + dependentsCost;
+                const whatsappLink = `https://wa.me/${numeroWhatsappRH}?text=${encodeURIComponent(whatsappMessage)}`;
+
+                resultsDiv.innerHTML = `
+                <h3 class="text-xl font-bold text-center mb-6 text-indigo-800">Resultado da Simulação</h3>
+                <div class="space-y-3 text-lg">
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                        <span class="font-medium text-slate-600">Valor do seu plano (${selectedPlan}):</span>
+                        <span class="font-bold">${formatCurrency(employeePlanValue)}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                        <span class="font-medium text-green-700">Subsídio da empresa (50% do Ambulatorial):</span>
+                        <span class="font-bold text-green-700">- ${formatCurrency(companySubsidy)}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                        <span class="font-medium text-slate-600">Valor total dos dependentes:</span>
+                        <span class="font-bold">+ ${formatCurrency(dependentsCost)}</span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-indigo-600 text-white rounded-lg mt-4 shadow-inner">
+                        <span class="text-xl font-bold uppercase tracking-tight">Total a ser descontado:</span>
+                        <span class="text-3xl font-bold">${formatCurrency(totalDiscount)}</span>
+                    </div>
+                    
+                    <div class="pt-6">
+                        <a href="${whatsappLink}" 
+                           target="_blank" 
+                           class="btn-whatsapp-pulse w-full bg-green-600 text-white font-bold text-lg py-5 rounded-xl flex items-center justify-center gap-3 hover:bg-green-700 transition-all shadow-xl text-center px-4 uppercase tracking-tighter">
+                            <svg class="w-8 h-8 flex-shrink-0 fill-current" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                            SOLICITAR MEU PLANO PARA O RH
+                        </a>
+                        <p class="text-slate-400 text-sm mt-3 text-center">Clique acima para falar com o RH da Desbrav via WhatsApp</p>
+                    </div>
+                </div>
+            `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const employeeAgeSelect = document.getElementById('employee-age');
+            employeeAgeSelect.innerHTML = ageRanges.map((range, index) => `<option value="${index}">${range}</option>`).join('');
+            employeeAgeSelect.addEventListener('change', calculateTotal);
+            document.querySelectorAll('input[name="selected-plan"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.checked) { selectPlan(e.target.value); }
+                });
+            });
+            showTab('comparativo');
+            calculateTotal();
+        });
+    </script>
+
+</body>
+</html>
